@@ -61,6 +61,7 @@ for doc in documents:
     training.append([bag,class_list])
 random.shuffle(training)
 training = np.array(training)
+print training[0]
 print np.shape(training)
 train_x = np.array(list(training[:,0]))
 train_y = np.array(list(training[:,1]))
@@ -105,6 +106,7 @@ l2_out = tf.nn.softmax(tf.matmul(l1_out,w2) + b2)
 w3 =  tf.Variable(tf.random_normal([hidden_nodes2,output_classes]))
 b3 = tf.Variable(tf.random_normal([output_classes]))
 y = tf.nn.softmax(tf.matmul(l2_out,w3) + b3)
+y_max = tf.argmax(y,1)
 
 cross_entropy = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(y), reduction_indices=[1]))
 train_step = tf.train.GradientDescentOptimizer(0.005).minimize(cross_entropy)
@@ -112,11 +114,10 @@ train_step = tf.train.GradientDescentOptimizer(0.005).minimize(cross_entropy)
 sess = tf.InteractiveSession()
 tf.global_variables_initializer().run()
 epochs = 2000
-
 for i in range(epochs):
     # print train_x[10],train_y[0]
-    print sess.run(train_step, feed_dict={ X:train_x, Y:train_y })
-    # print sess.run(y)
+    y_, _ = sess.run([y_max, train_step], feed_dict={ X:train_x, Y:train_y })
+    print y_
     # print sess.run(X)
     if i>5:
         break
