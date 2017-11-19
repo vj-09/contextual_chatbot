@@ -33,6 +33,9 @@ words = [stemmer.stem(w.lower()) for w in words if w  not in ignore_list]
 # words.append('accept')
 words = sorted(list(set(words)))
 classes = list(set(tags))
+# print documents
+# print words
+# print classes
     # print words
 # print (len(documents), "documents")
 # print (len(classes), "classes", classes)
@@ -113,11 +116,38 @@ train_step = tf.train.GradientDescentOptimizer(0.005).minimize(cross_entropy)
 
 sess = tf.InteractiveSession()
 tf.global_variables_initializer().run()
-epochs = 2000
+epochs = 8000
 for i in range(epochs):
     # print train_x[10],train_y[0]
-    y_, _ = sess.run([y_max, train_step], feed_dict={ X:train_x, Y:train_y })
-    print y_
+    cross_ent_,  _ = sess.run([cross_entropy, train_step], feed_dict={ X:train_x, Y:train_y })
     # print sess.run(X)
-    if i>5:
-        break
+    if i%100 == 0:
+        print "training step : {}, cross_entropy : {}".format(i, cross_ent_)
+
+
+#########Testing #################
+with  open("test_data.json")as data:
+    test_data = json.load(data)
+set_data = test_data['questions']
+
+test_document = []
+for data in set_data:
+    # print data['patterns']
+    # print pattern
+    w1 = nltk.word_tokenize(str(data))
+    test_words = [stemmer.stem(w.lower()) for w in w1 if w  not in ignore_list]
+    test_document.append(test_words)
+test_x = []
+for doc in test_document:
+    bag = []
+    for word in words:
+        if word in doc:
+            bag.append(1)
+        else:
+            bag.append(0)
+    test_x.append(bag)
+# print test_document
+# print set_data
+out = sess.run(y_max, feed_dict={ X:test_x })
+for i in range(len(out)):
+    print "data : {} class : [ {} ]".format(set_data[i], classes[i])
