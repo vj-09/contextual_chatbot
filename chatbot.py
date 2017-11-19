@@ -150,4 +150,4 @@ for doc in test_document:
 # print set_data
 out = sess.run(y_max, feed_dict={ X:test_x })
 for i in range(len(out)):
-    print "data : {} class : [ {} ]".format(set_data[i], classes[i])
+    print "data : {} class : [ {} ]".format(set_data[i], classes[out[i]])
