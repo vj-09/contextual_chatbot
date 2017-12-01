@@ -99,3 +99,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+checkpoint
+*.index
+*.meta
+*.data-00000-of-00001

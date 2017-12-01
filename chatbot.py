@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tflearn
 import pickle
 import numpy as np
 import json
@@ -68,18 +67,45 @@ train_y = np.array(list(training[:,1]))
 print np.shape(train_x),len(train_x[0])
 ###########################################################################
 #%%%%%%%%%%% tensorflow veriables and placeholders dec %%%%%%%%%%%%%%%%%#
-tf.reset_default_graph()
-net = tflearn.input_data(shape=[None,len(train_x[0])])
-net = tflearn.fully_connected(net,8)
-net = tflearn.fully_connected(net,8)
-net = tflearn.fully_connected(net, len(train_y[0]), activation='softmax')
-net = tflearn.regression(net)
+# tf.reset_default_graph()
+# net = tflearn.input_data(shape=[None,len(train_x[0])])
+# net = tflearn.fully_connected(net,8)
+# net = tflearn.fully_connected(net,8)
+# net = tflearn.fully_connected(net, len(train_y[0]), activation='softmax')
+# net = tflearn.regression(net)
+#
+# model = tflearn.DNN(net, tensorboard_dir='tflearn_logs')
+# # Start training (apply gradient descent algorithm)
+# model.fit(train_x, train_y, n_epoch=800, batch_size=8, show_metric=True)
+#
+# print model.save('model.tflearn')
+######### above model in vanilla tf #################
+def layer(prev_layer, n_in, n_out):
+    w = tf.Variable(tf.random_normal([n_in, n_out]))
+    b = tf.Variable(tf.random_normal([n_out]))
+    return tf.matmul(prev_layer, w) + b
 
-model = tflearn.DNN(net, tensorboard_dir='tflearn_logs')
-# Start training (apply gradient descent algorithm)
-model.fit(train_x, train_y, n_epoch=800, batch_size=8, show_metric=True)
+x = tf.placeholder(dtype=tf.float32, shape=[None,len(train_x[0])])
+y = tf.placeholder(dtype=tf.float32, shape=[None,len(train_y[0])])
 
-print model.save('model.tflearn')
+h1 = layer(x, len(train_x[0]), 8)
+h2 = layer(h1, 8, 8)
+predicted_y = layer(h2, 8, len(train_y[0]))
+
+# out = tf.nn.softmax(predicted_y)
+
+loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=predicted_y, labels=y))
+train_step = tf.train.GradientDescentOptimizer(1e-3).minimize(loss)
+init = tf.global_variables_initializer()
+
+sess = tf.Session()
+sess.run(init)
+
+for i in range(10000):
+    loss_, _ = sess.run([loss, train_step], feed_dict={x:train_x, y:train_y})
+    if i % 50 == 0:
+        print "i : {}, loss : {}".format(i, loss_)
+
 ###################################################################################
 #%%%%%%%%%%%%%% model2 with test %%%%%%%%%%%%%%%%%
 # input_features = len(train_x[0])
@@ -173,7 +199,8 @@ context = {}
 
 def classify(sentence):
     return_list=[]
-    results = model.predict([bow(sentence,words)])[0]
+    # results = model.predict([bow(sentence,words)])[0]
+    results = sess.run(predicted_y, feed_dict={x:[bow(sentence,words)]})[0]
     # print results
     results = [[i,r] for i,r in enumerate(results) if r>ERROR_THRESHOLD]
     # print results
@@ -187,6 +214,10 @@ def classify(sentence):
 
 def response(sentence, userID='123', show_details=False):
     results = classify(sentence)
+
+    print "GIVEN : {}".format(sentence)
+    if len(results) == 0:
+        print "No results"
 
     # if we have a classification then find the matching intent tag
     if results:
@@ -211,4 +242,4 @@ def response(sentence, userID='123', show_details=False):
                             print random.choice(i['responses'])
             results.pop(0)
 response("can we rent a mope")
-response('today')
+response('i like movies')
